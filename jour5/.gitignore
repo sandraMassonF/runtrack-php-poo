@@ -1,0 +1,168 @@
+corrigé
+
+
+
+<?php
+session_start();
+
+// Classe abstraite GestionJoueur, utilisée comme base pour Joueur
+abstract class GestionJoueur {
+    protected string $symbole;
+
+    public function __construct(string $symbole) {
+        $this->symbole = $symbole;
+    }
+
+    public function getSymbole(): string {
+        return $this->symbole;
+    }
+}
+
+// Classe Joueur qui hérite de GestionJoueur
+class Joueur extends GestionJoueur {}
+
+// Classe qui gère le plateau de jeu
+class Plateau {
+    private array $grille;
+
+    public function __construct() {
+        // Initialisation du plateau de jeu avec une grille vide
+        $this->grille = array_fill(0, 3, array_fill(0, 3, ''));
+    }
+
+    public function getGrille(): array {
+        return $this->grille;
+    }
+
+    public function actionJouer(int $ligne, int $colonne, string $symbole): bool {
+        // Vérifie si la case est vide avant d'ajouter le symbole
+        if ($this->grille[$ligne][$colonne] === '') {
+            $this->grille[$ligne][$colonne] = $symbole;
+            return true;
+        }
+        return false;
+    }
+
+    public function verificationGagnant(): ?string {
+        // Vérification des lignes et colonnes
+        for ($i = 0; $i < 3; $i++) {
+            if ($this->grille[$i][0] !== '' && $this->grille[$i][0] === $this->grille[$i][1] && $this->grille[$i][1] === $this->grille[$i][2]) {    
+                return $this->grille[$i][0];
+            }
+            if ($this->grille[0][$i] !== '' && $this->grille[0][$i] === $this->grille[1][$i] && $this->grille[1][$i] === $this->grille[2][$i]) {
+                return $this->grille[0][$i];
+            }
+        }
+
+        // Vérification des diagonales
+        if ($this->grille[0][0] !== '' && $this->grille[0][0] === $this->grille[1][1] && $this->grille[1][1] === $this->grille[2][2]) {
+            return $this->grille[0][0];
+        }
+        if ($this->grille[0][2] !== '' && $this->grille[0][2] === $this->grille[1][1] && $this->grille[1][1] === $this->grille[2][0]) {
+            return $this->grille[0][2];
+        }
+
+        return null;
+    }
+
+    public function plateauRempli(): bool {
+        // Vérifie si toutes les cases sont remplies
+        foreach ($this->grille as $ligne) {
+            if (in_array('', $ligne, true)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+// Classe principale qui gère le jeu
+class Jeu {
+    private Plateau $plateau;
+    private Joueur $joueur1;
+    private Joueur $joueur2;
+    private Joueur $joueurActif;
+
+    public function __construct() {
+        $this->plateau = new Plateau();
+        $this->joueur1 = new Joueur('X');
+        $this->joueur2 = new Joueur('O');
+        $this->joueurActif = $this->joueur1;
+    }
+
+    public function getPlateau(): Plateau {
+        return $this->plateau;
+    }
+
+    public function changementJoueur(): void {
+        // Change de joueur après chaque tour
+        $this->joueurActif = $this->joueurActif === $this->joueur1 ? $this->joueur2 : $this->joueur1;
+    }
+
+    public function jouer(int $ligne, int $colonne): ?string {
+        // Vérifie si le coup est valide
+        if ($this->plateau->actionJouer($ligne, $colonne, $this->joueurActif->getSymbole())) {
+            $gagnant = $this->plateau->verificationGagnant();
+            if ($gagnant) {
+                return "$gagnant a gagné !";
+            }
+            if ($this->plateau->plateauRempli()) {
+                return "Match nul !";
+            }
+            $this->changementJoueur();
+        }
+        return null;
+    }
+}
+
+// Initialisation du jeu dans la session
+if (!isset($_SESSION['jeu'])) {
+    $_SESSION['jeu'] = new Jeu();
+}
+
+$jeu = $_SESSION['jeu'];
+$grille = $jeu->getPlateau()->getGrille();
+
+// Gestion de la soumission du formulaire
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ligne'], $_POST['colonne'])) {
+    $message = $jeu->jouer((int)$_POST['ligne'], (int)$_POST['colonne']);
+    if ($message) {
+        session_destroy(); // Réinitialisation du jeu en cas de fin
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morpion</title>
+</head>
+<body>
+    <table border="1" cellspacing="0" cellpadding="20" style="text-align:center; font-size:24px;">
+        <?php for ($i = 0; $i < 3; $i++): ?>
+            <tr>
+                <?php for ($j = 0; $j < 3; $j++): ?>
+                    <td>
+                        <?php if ($grille[$i][$j] === ''): ?>
+                            <form method="post">
+                                <input type="hidden" name="ligne" value="<?= $i; ?>">
+                                <input type="hidden" name="colonne" value="<?= $j; ?>">
+                                <button type="submit" style="width:100%; height:100%; border:none; background:none; font-size:24px; cursor:pointer;">.</button>
+                            </form>
+                        <?php else: ?>
+                            <?= $grille[$i][$j]; ?>
+                        <?php endif; ?>
+                    </td>
+                <?php endfor; ?>
+            </tr>
+        <?php endfor; ?>
+    </table>
+
+    <?php if (isset($message)): ?>
+        <h3 style="text-align: center;"> <?= $message; ?> </h3>
+        <div style="text-align: center;"><a href="<?= $_SERVER['PHP_SELF']; ?>">Rejouer</a></div>
+    <?php endif; ?>
+</body>
+</html>

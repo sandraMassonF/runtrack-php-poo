@@ -1,3 +1,7 @@
+<!-- Mettons en application l’ensemble des concepts de la programmation orientée objet vus à ce jour en créant votre propre version du jeu Tic Tac Toe.
+Dans ce jeu, deux joueurs s’affrontent. À tour de rôle, chacun désigne une case et y insère alternativement un signe X ou O à l’aide d’un formulaire. Le premier joueur qui parvient à aligner trois signes verticalement, horizontalement ou en diagonale gagne la partie. Si le plateau de jeu est rempli de signes sans qu’il y ait d’alignement de trois, alors la partie se termine par un match nul. -->
+
+
 <?php
 session_start();
 
@@ -18,13 +22,22 @@ class Joueur{
 
 }
 
-class Tour{
+class Tour extends Joueur{
 
+public $tourJoueur;
+
+public function __construct(bool $tourJoueur, $joueur1, $joueur2){
+    $this->tourJoueur = $tourJoueur;
+    parent::__construct($joueur1, $joueur2);
+
+}
+
+public function tourJoueur(){
 
 
 }
 
-
+}
 
 
 ?>
@@ -35,13 +48,13 @@ class Tour{
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>TiKTaKToE</title>
+    <title>TicTacToe</title>
 </head>
 <body>
-<h1>TiKTaKToE</h1>
+<h1>TicTacToe</h1>
 
 <main>
-    <article class="tiktak">
+    <article class="tictac">
     <form class="form" method="post" action="">
         <input class="btn" type="submit" name="1" value="__">
         <input class="btn" type="submit" name="2" value="__">
